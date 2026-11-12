@@ -20,7 +20,7 @@ export const CONFIG = {
     filterMinCF: 0.001,
     filterBeta: 1000,
     warmupTolerance: 5,
-    missTolerance: 10,
+    missTolerance: 30,
   },
 
   texts: {
@@ -41,7 +41,7 @@ export const CONFIG = {
       message: 'Este es el modelo de la empresa. Pasa a la siguiente página para ver los productos.',
       model: './models/portada.glb',
       placeholder: { type: 'torusKnot', color: 0x2ec4b6 },
-      scale: 0.35,
+      scale: 1,
       position: [0, 0, 0.25],   // x, y, z (z = altura sobre la hoja)
       rotation: [0, 0, 0],      // radianes
       // Hook opcional para animaciones personalizadas: (entry, delta, elapsed) => {}
@@ -55,7 +55,7 @@ export const CONFIG = {
       message: 'Sigue con la siguiente página.',
       model: './models/producto-1.glb',
       placeholder: { type: 'box', color: 0xff9f1c },
-      scale: 0.4,
+      scale: 1,
       position: [0, 0, 0.25],
       rotation: [0, 0, 0],
       onUpdate: null,
@@ -68,7 +68,7 @@ export const CONFIG = {
       message: 'Sigue con la siguiente página.',
       model: './models/producto-2.glb',
       placeholder: { type: 'sphere', color: 0xe71d36 },
-      scale: 0.4,
+      scale: 1,
       position: [0, 0, 0.25],
       rotation: [0, 0, 0],
       onUpdate: null,
@@ -81,7 +81,7 @@ export const CONFIG = {
       message: 'Has llegado a la última página escaneable por ahora.',
       model: './models/producto-3.glb',
       placeholder: { type: 'cone', color: 0x5e60ce },
-      scale: 0.4,
+      scale: 1,
       position: [0, 0, 0.25],
       rotation: [0, 0, 0],
       onUpdate: null,
