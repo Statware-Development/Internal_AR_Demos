@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#14181f" />
+  <title>Catálogo AR</title>
+  <link rel="stylesheet" href="./css/style.css" />
+
+  <!-- Three.js y MindAR por CDN (versiones fijas). Rutas relativas en todo el proyecto para que funcione en GitHub Pages. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+      "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- Aquí MindAR inserta el video de la cámara y el canvas de Three.js -->
+  <div id="ar-container"></div>
+
+  <!-- Pantalla de carga / permiso de cámara -->
+  <section id="loading" class="screen" role="status" aria-live="polite">
+    <div class="loading-card">
+      <h1 id="loading-title">Catálogo AR</h1>
+      <p id="loading-text">Preparando la cámara…</p>
+      <div class="bar"><span></span></div>
+    </div>
+  </section>
+
+  <!-- Indicación de escaneo (marco + texto) -->
+  <section id="hint" class="hidden" aria-live="polite">
+    <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <p id="hint-text"></p>
+  </section>
+
+  <!-- Tarjeta que aparece al detectar una página -->
+  <section id="card" class="hidden" aria-live="polite">
+    <h2 id="card-title"></h2>
+    <p id="card-text"></p>
+  </section>
+
+  <!-- Progreso: portada + páginas -->
+  <nav id="progress" class="hidden" aria-label="Páginas escaneadas"></nav>
+
+  <!-- Errores -->
+  <section id="error" class="screen hidden" role="alert">
+    <div class="loading-card">
+      <h1>No pudimos iniciar la cámara</h1>
+      <p id="error-text"></p>
+      <button id="retry" type="button">Reintentar</button>
+    </div>
+  </section>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
