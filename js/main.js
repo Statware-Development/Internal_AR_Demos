@@ -25,6 +25,23 @@ const easeOutBack = (t) => {
   return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
 };
 
+async function refocusCamera() {
+  const video = $('ar-container').querySelector('video');
+  const track = video?.srcObject?.getVideoTracks()[0];
+  if (!track?.getCapabilities || !track.applyConstraints) return;
+
+  const focusModes = track.getCapabilities().focusMode;
+  if (!focusModes?.includes('single-shot')) return;
+
+  try {
+    await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+  } catch (err) {
+    console.warn('[Catálogo AR] No se pudo reenfocar la cámara.', err);
+  }
+}
+
+document.addEventListener('pointerdown', refocusCamera, { passive: true });
+
 /* ---------- UI ---------- */
 
 function buildProgress() {
