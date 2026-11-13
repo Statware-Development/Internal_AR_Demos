@@ -29,6 +29,10 @@ export const CONFIG = {
     scanNext: (name) => `Pasa a la siguiente página: ${name}`,
     scanAgain: 'Apunta la cámara a cualquier página del catálogo',
     cameraDenied: 'Permite el acceso a la cámara en tu navegador y vuelve a intentarlo.',
+    cameraSelectionUnavailable: 'Este navegador no permite seleccionar cámaras para comprobar el enfoque continuo.',
+    cameraCheckFailed: 'No se pudieron comprobar las cámaras disponibles. Verifica los permisos y vuelve a intentarlo.',
+    continuousFocusUnavailable: 'No se encontró una cámara disponible con enfoque continuo.',
+    continuousFocusActivationFailed: 'No se pudo activar el enfoque continuo en la cámara seleccionada.',
     generic: 'Revisa tu conexión y que el archivo targets/targets.mind exista. Luego reintenta.',
   },
 
