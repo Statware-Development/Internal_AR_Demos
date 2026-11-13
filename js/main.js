@@ -34,28 +34,36 @@ function stopStream(stream) {
   stream.getTracks().forEach((track) => track.stop());
 }
 
-function focusError(name, message) {
-  const error = new Error(message);
-  error.name = name;
-  return error;
-}
-
-async function findContinuousFocusCamera() {
+async function findHighestResolutionCamera() {
   if (!navigator.mediaDevices?.getUserMedia || !navigator.mediaDevices?.enumerateDevices) {
-    throw focusError('CameraSelectionError', CONFIG.texts.cameraSelectionUnavailable);
+    console.warn('[Catálogo AR] No se pueden comprobar las cámaras; se usará la cámara predeterminada.');
+    return null;
   }
 
-  const permissionStream = await navigator.mediaDevices.getUserMedia({
-    audio: false,
-    video: { facingMode: { ideal: 'environment' } },
-  });
-  stopStream(permissionStream);
+  let permissionStream;
+  try {
+    permissionStream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: 'environment' } },
+    });
+  } catch (err) {
+    console.warn('[Catálogo AR] No se pudieron consultar las cámaras; se usará la cámara predeterminada.', err);
+    return null;
+  } finally {
+    if (permissionStream) stopStream(permissionStream);
+  }
 
-  const cameras = (await navigator.mediaDevices.enumerateDevices())
-    .filter((device) => device.kind === 'videoinput');
-  let environmentCameraId = null;
-  let otherCameraId = null;
-  let checkedCameraCount = 0;
+  let cameras;
+  try {
+    cameras = (await navigator.mediaDevices.enumerateDevices())
+      .filter((device) => device.kind === 'videoinput');
+  } catch (err) {
+    console.warn('[Catálogo AR] No se pudo enumerar las cámaras; se usará la cámara predeterminada.', err);
+    return null;
+  }
+  let selectedCameraId = null;
+  let selectedCameraLabel = null;
+  let maxPixelCount = 0;
 
   for (const [index, device] of cameras.entries()) {
     const label = device.label || `Cámara ${index + 1}`;
@@ -67,17 +75,27 @@ async function findContinuousFocusCamera() {
       });
       const track = stream.getVideoTracks()[0];
       const capabilities = track?.getCapabilities?.();
-      const modes = capabilities?.focusMode ?? [];
-      const settings = track?.getSettings?.();
-      const facingMode = settings?.facingMode;
-      checkedCameraCount += 1;
-      console.info(`[Catálogo AR] Cámara "${label}": modos de enfoque`, modes, 'orientación', facingMode || 'desconocida');
-      if (modes.includes('continuous') && facingMode !== 'user' && !/\b(front|user|frontal)\b/i.test(label)) {
-        if (facingMode === 'environment' || /\b(back|rear|environment|world|trasera)\b/i.test(label)) {
-          if (!environmentCameraId) environmentCameraId = device.deviceId;
-        } else {
-          if (!otherCameraId) otherCameraId = device.deviceId;
+      const maxWidth = capabilities?.width?.max;
+      const maxHeight = capabilities?.height?.max;
+      if (Number.isFinite(maxWidth) && Number.isFinite(maxHeight)) {
+        try {
+          await track.applyConstraints({
+            width: { ideal: maxWidth },
+            height: { ideal: maxHeight },
+          });
+        } catch (err) {
+          console.warn(`[Catálogo AR] No se pudo probar la resolución máxima de "${label}".`, err);
         }
+      }
+      const settings = track?.getSettings?.();
+      const width = settings?.width ?? maxWidth ?? 0;
+      const height = settings?.height ?? maxHeight ?? 0;
+      const pixelCount = width * height;
+      console.info(`[Catálogo AR] Cámara "${label}": ${width}x${height} (${pixelCount} píxeles).`);
+      if (pixelCount > maxPixelCount) {
+        maxPixelCount = pixelCount;
+        selectedCameraId = device.deviceId;
+        selectedCameraLabel = label;
       }
     } catch (err) {
       console.warn(`[Catálogo AR] No se pudo comprobar la cámara "${label}".`, err);
@@ -86,17 +104,13 @@ async function findContinuousFocusCamera() {
     }
   }
 
-  const selectedCameraId = environmentCameraId || otherCameraId;
   if (selectedCameraId) {
-    console.info('[Catálogo AR] Se usará una cámara con enfoque continuo; se prioriza la orientada al entorno.');
+    console.info(`[Catálogo AR] Se usará "${selectedCameraLabel}", la cámara de mayor resolución (${maxPixelCount} píxeles).`);
     return selectedCameraId;
   }
 
-  if (checkedCameraCount === 0) {
-    throw focusError('CameraSelectionError', CONFIG.texts.cameraCheckFailed);
-  }
-
-  throw focusError('ContinuousFocusUnavailableError', CONFIG.texts.continuousFocusUnavailable);
+  console.info('[Catálogo AR] No se pudo determinar la resolución de ninguna cámara; se usará la cámara predeterminada.');
+  return null;
 }
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -183,11 +197,7 @@ function refreshUI() {
 function showError(err) {
   console.error(err);
   const denied = err && (err.name === 'NotAllowedError' || /permission|denied/i.test(String(err.message || err)));
-  if (err?.name === 'ContinuousFocusUnavailableError' || err?.name === 'CameraSelectionError') {
-    ui.errorText.textContent = err.message;
-  } else {
-    ui.errorText.textContent = denied ? CONFIG.texts.cameraDenied : CONFIG.texts.generic;
-  }
+  ui.errorText.textContent = denied ? CONFIG.texts.cameraDenied : CONFIG.texts.generic;
   ui.loading.classList.add('hidden');
   ui.hint.classList.add('hidden');
   ui.error.classList.remove('hidden');
@@ -229,12 +239,12 @@ async function start() {
   document.title = `Catálogo AR – ${CONFIG.company}`;
   $('loading-title').textContent = CONFIG.company;
 
-  const environmentDeviceId = await findContinuousFocusCamera();
+  const environmentDeviceId = await findHighestResolutionCamera();
   const mindar = new MindARThree({
     container: $('ar-container'),
     imageTargetSrc: CONFIG.mindFile,
     maxTrack: CONFIG.maxTrack,
-    environmentDeviceId,
+    ...(environmentDeviceId ? { environmentDeviceId } : {}),
     ...CONFIG.tracking,
     uiLoading: 'no', uiScanning: 'no', uiError: 'no',
   });
@@ -276,14 +286,6 @@ async function start() {
   }
 
   await mindar.start();   // pide permiso de cámara y carga el .mind
-  const cameraTrack = getCameraTrack();
-  try {
-    if (!cameraTrack?.applyConstraints) throw new Error('El navegador no permite configurar el enfoque.');
-    await cameraTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
-  } catch (err) {
-    console.warn('[Catálogo AR] No se pudo activar el enfoque continuo.', err);
-    throw focusError('ContinuousFocusUnavailableError', CONFIG.texts.continuousFocusActivationFailed);
-  }
 
   buildProgress();
   ui.progress.classList.remove('hidden');
