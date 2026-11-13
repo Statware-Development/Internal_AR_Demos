@@ -25,23 +25,53 @@ const easeOutBack = (t) => {
   return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
 };
 
-async function refocusCamera() {
+function getCameraTrack() {
   const video = $('ar-container').querySelector('video');
-  const track = video?.srcObject?.getVideoTracks()[0];
-  if (!track?.getCapabilities || !track.applyConstraints) return;
+  return video?.srcObject?.getVideoTracks?.()[0] ?? null;
+}
 
-  const focusModes = track.getCapabilities().focusMode;
-  if (!focusModes?.includes('single-shot')) return;
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function refocusCamera() {
+  const track = getCameraTrack();
+  if (!track?.getCapabilities || !track.applyConstraints) {
+    console.warn('[Catálogo AR] No hay track de cámara con controles de enfoque.');
+    return;
+  }
+
+  const caps = track.getCapabilities();
+  const modes = caps.focusMode ?? [];
+  console.log('[Catálogo AR] focusMode soportados:', modes, 'focusDistance:', caps.focusDistance);
 
   try {
-    await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+    if (modes.includes('single-shot')) {
+      await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+      return;
+    }
+
+    if (modes.includes('manual') && caps.focusDistance && modes.includes('continuous')) {
+      // Mueve el foco a otro punto y regresa a continuo para forzar un nuevo enfoque
+      const { min, max } = caps.focusDistance;
+      await track.applyConstraints({
+        advanced: [{ focusMode: 'manual', focusDistance: min + (max - min) * 0.3 }],
+      });
+      await wait(150);
+      await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+      return;
+    }
+
+    if (modes.includes('continuous')) {
+      await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+      return;
+    }
+
+    console.warn('[Catálogo AR] Este dispositivo no permite controlar el enfoque.');
   } catch (err) {
     console.warn('[Catálogo AR] No se pudo reenfocar la cámara.', err);
   }
 }
 
 document.addEventListener('pointerdown', refocusCamera, { passive: true });
-
 /* ---------- UI ---------- */
 
 function buildProgress() {
