@@ -37,7 +37,7 @@ html, body {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: #0d1117;
+  background: #719cdd;
 }
 .loading-card { width: min(360px, 100%); text-align: left; }
 .loading-card h1 { margin: 0 0 8px; font-size: 1.6rem; font-weight: 650; letter-spacing: -0.01em; }
