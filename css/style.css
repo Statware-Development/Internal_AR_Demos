@@ -1,6 +1,6 @@
 /* Colores de marca: cambia --accent por el color de la empresa */
 :root {
-  --accent: #c4a92e;
+  --accent: #5f2bd8;
   --ink: #f4f6f8;
   --panel: rgba(16, 20, 27, 0.82);
   --panel-line: rgba(255, 255, 255, 0.14);
@@ -37,7 +37,7 @@ html, body {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: #719cdd;
+  background: #3c4b61;
 }
 .loading-card { width: min(360px, 100%); text-align: left; }
 .loading-card h1 { margin: 0 0 8px; font-size: 1.6rem; font-weight: 650; letter-spacing: -0.01em; }
