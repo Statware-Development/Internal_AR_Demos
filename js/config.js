@@ -20,7 +20,13 @@ export const CONFIG = {
     filterMinCF: 0.0001,
     filterBeta: 1000,
     warmupTolerance: 5,
-    missTolerance: 100,
+    missTolerance: 10,
+  },
+
+  // Suavizado adicional de la pose del marcador (0 = fija la pose, 1 = sin suavizado).
+  poseSmoothing: {
+    position: 0.25,
+    rotation: 0.25,
   },
 
   texts: {

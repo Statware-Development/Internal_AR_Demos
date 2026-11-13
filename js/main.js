@@ -220,23 +220,36 @@ async function start() {
     const anchor = mindar.addAnchor(def.index);
     const { object, mixer, isPlaceholder } = await loadModel(def);
 
+    const rawPosition = new THREE.Vector3();
+    const rawQuaternion = new THREE.Quaternion();
+    const rawScale = new THREE.Vector3();
+    const smoothPosition = new THREE.Vector3();
+    const smoothQuaternion = new THREE.Quaternion();
+    const smoothScale = new THREE.Vector3();
+
     const group = new THREE.Group();
     group.position.set(...def.position);
     group.rotation.set(...def.rotation);
     group.add(object);
     anchor.group.add(group);
 
-    const entry = { def, anchor, group, object, mixer, isPlaceholder, appear: 0, baseScale: def.scale };
+    const entry = {
+      def, anchor, group, object, mixer, isPlaceholder, appear: 0, baseScale: def.scale,
+      rawPosition, rawQuaternion, rawScale, smoothPosition, smoothQuaternion, smoothScale,
+      hasSmoothedPose: false,
+    };
     group.scale.setScalar(0.0001);
     entries.push(entry);
 
     anchor.onTargetFound = () => {
       entry.appear = 0;
+      entry.hasSmoothedPose = false;
       seen.add(def.index);
       visibleNow.add(def.index);
       refreshUI();
     };
     anchor.onTargetLost = () => {
+      entry.hasSmoothedPose = false;
       visibleNow.delete(def.index);
       refreshUI();
     };
@@ -257,6 +270,25 @@ async function start() {
 
     for (const e of entries) {
       if (!e.anchor.group.visible) continue;
+
+      const anchorGroup = e.anchor.group;
+      anchorGroup.matrix.decompose(e.rawPosition, e.rawQuaternion, e.rawScale);
+      if (!e.hasSmoothedPose) {
+        e.smoothPosition.copy(e.rawPosition);
+        e.smoothQuaternion.copy(e.rawQuaternion);
+        e.smoothScale.copy(e.rawScale);
+        e.hasSmoothedPose = true;
+      } else {
+        // Conserva una respuesta similar entre tasas de cuadros y suaviza la pose en el mismo grupo.
+        const dt = Math.min(delta, 0.1);
+        const positionAlpha = 1 - Math.pow(1 - CONFIG.poseSmoothing.position, dt * 60);
+        const rotationAlpha = 1 - Math.pow(1 - CONFIG.poseSmoothing.rotation, dt * 60);
+        e.smoothPosition.lerp(e.rawPosition, positionAlpha);
+        e.smoothQuaternion.slerp(e.rawQuaternion, rotationAlpha);
+        e.smoothScale.lerp(e.rawScale, positionAlpha);
+      }
+      anchorGroup.matrix.compose(e.smoothPosition, e.smoothQuaternion, e.smoothScale);
+      anchorGroup.matrixWorldNeedsUpdate = true;
 
       // Entrada con rebote al detectar la página
       if (e.appear < 1) {

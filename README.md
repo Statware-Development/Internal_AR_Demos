@@ -87,4 +87,4 @@ Nota: GitHub Pages en repositorios privados requiere un plan que lo permita (Git
 | "No pudimos iniciar la cámara" | Permiso de cámara denegado, página sin HTTPS, o falta `targets/targets.mind` |
 | Se ve el placeholder en lugar del modelo | El `.glb` no existe, el nombre no coincide o falló la carga (revisa la consola) |
 | El modelo aparece enorme/diminuto | Ajusta `scale` en `config.js` |
-| El modelo "tiembla" | Mejora la imagen del marcador, o sube `missTolerance` / baja `filterBeta` en `config.js` |
+| El modelo "tiembla" | Mejora la imagen del marcador, ajusta `tracking` o baja `poseSmoothing.position` / `poseSmoothing.rotation` en `js/config.js` (más bajo = más suave, con más retraso) |
