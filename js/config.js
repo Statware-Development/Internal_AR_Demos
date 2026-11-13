@@ -17,10 +17,10 @@ export const CONFIG = {
 
   // Estabilidad del tracking (valores por defecto de MindAR, salvo missTolerance).
   tracking: {
-    filterMinCF: 0.001,
+    filterMinCF: 0.0001,
     filterBeta: 1000,
     warmupTolerance: 5,
-    missTolerance: 30,
+    missTolerance: 100,
   },
 
   texts: {

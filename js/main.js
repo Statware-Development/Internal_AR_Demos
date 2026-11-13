@@ -113,49 +113,6 @@ async function findHighestResolutionCamera() {
   return null;
 }
 
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// async function refocusCamera() {
-//   const track = getCameraTrack();
-//   if (!track?.getCapabilities || !track.applyConstraints) {
-//     console.warn('[Catálogo AR] No hay track de cámara con controles de enfoque.');
-//     return;
-//   }
-
-//   const caps = track.getCapabilities();
-//   const modes = caps.focusMode ?? [];
-//   console.log('[Catálogo AR] focusMode soportados:', modes, 'focusDistance:', caps.focusDistance);
-
-//   try {
-//     if (modes.includes('single-shot')) {
-//       await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
-//       return;
-//     }
-
-//     if (modes.includes('manual') && caps.focusDistance && modes.includes('continuous')) {
-//       // Mueve el foco a otro punto y regresa a continuo para forzar un nuevo enfoque
-//       const { min, max } = caps.focusDistance;
-//       await track.applyConstraints({
-//         advanced: [{ focusMode: 'manual', focusDistance: min + (max - min) * 0.3 }],
-//       });
-//       await wait(150);
-//       await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
-//       return;
-//     }
-
-//     if (modes.includes('continuous')) {
-//       await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
-//       return;
-//     }
-
-//     console.warn('[Catálogo AR] Este dispositivo no permite controlar el enfoque.');
-//   } catch (err) {
-//     console.warn('[Catálogo AR] No se pudo reenfocar la cámara.', err);
-//   }
-// }
-
-// document.addEventListener('pointerdown', refocusCamera, { passive: true });
-
 /* ---------- UI ---------- */
 
 function buildProgress() {
@@ -244,7 +201,7 @@ async function start() {
     container: $('ar-container'),
     imageTargetSrc: CONFIG.mindFile,
     maxTrack: CONFIG.maxTrack,
-    ...(environmentDeviceId ? { environmentDeviceId } : {}),
+    environmentDeviceId,
     ...CONFIG.tracking,
     uiLoading: 'no', uiScanning: 'no', uiError: 'no',
   });
